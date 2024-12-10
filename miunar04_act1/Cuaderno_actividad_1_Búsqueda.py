@@ -123,7 +123,7 @@ def searchInfo (problem,result,use_viewer):
             res+= '{0}: {1}\n'.format(s['name'],s['value'])
     return res
 
-
+# Comentario
 def resultado_experimento(problem,MAP,result,used_viewer):
     path = [x[1] for x in result.path()]
 
