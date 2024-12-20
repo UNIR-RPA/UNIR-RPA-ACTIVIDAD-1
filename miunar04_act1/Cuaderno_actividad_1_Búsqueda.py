@@ -27,30 +27,57 @@ from __future__ import print_function
 from simpleai.search.viewers import BaseViewer,ConsoleViewer,WebViewer
 from simpleai.search import SearchProblem, astar, breadth_first, depth_first, uniform_cost
 
-
-
 class GameWalkPuzzle(SearchProblem):
 
     def __init__(self, board, costs, heuristic_number):
         self.board = board
         self.goal = (0, 0)
         self.costs = costs
+        self.fifo_actions = []
+        self.edges = []
+        self.node = 0
         self.heuristic_number = heuristic_number
         for y in range(len(self.board)):
             for x in range(len(self.board[y])):
                 if self.board[y][x].lower() == "t":
                     self.initial = (x, y)
+                    print(f"Punto de Inicio: {self.initial}")
                 elif self.board[y][x].lower() == "p":
                     self.goal = (x, y)
+                    print(f"Punto de Objetivo: {self.goal}")
 
         super(GameWalkPuzzle, self).__init__(initial_state=self.initial)
 
     def actions(self, state):
+        print("============================================================================")
+        x, y = state
+        print(f"Posicion Actual: ({x}, {y})")
+        print(f"Nodo: {self.node}")
         actions = []
         for action in list(self.costs.keys()):
+            print(f"Analizando accion '{action}'")
             newx, newy = self.result(state, action)
             if self.board[newy][newx] != "#":
+                # print(f"El punto ({newy}, {newx}) NO es PARED")
+                print(f"Posicion Siguiente: ({newx}, {newy})")
                 actions.append(action)
+                self.fifo_actions.append(action)
+                print(f"Lista acciones nodo Actual: '{actions}'")
+                print(f"------------------------")
+            else:
+                print(f"El punto ({newy}, {newx}) es PARED")
+                print(f"------------------------")
+            
+        if (self.node == 0):
+            for action in actions:    
+                self.edges.append(('T', action))
+        else:
+            for action in actions:
+                self.edges.append((self.fifo_actions[0], action))
+                
+        self.node = self.node + 1
+        self.fifo_actions.pop(0)
+        print("============================================================================")
         return actions
 
     def result(self, state, action):
@@ -67,11 +94,16 @@ class GameWalkPuzzle(SearchProblem):
 
         new_state = (x, y)
         return new_state
+    
+    def add_son_node(self):
+        self.edges.append(self.node)
 
     def is_goal(self, state):
         return state == self.goal
 
     def cost(self, state, action, state2):
+        cost = self.costs[action]
+        print(f"Coste de accion '{action}': {cost}")
         return self.costs[action]
 
     # Esta función heurística es la distancia entre el estado actual
@@ -101,8 +133,8 @@ class GameWalkPuzzle(SearchProblem):
       else:
         raise Exception("El número de la función heurística debe estar entre 1 y 3. Revise la inicialización del problema.")
 
-def searchInfo (problem,result,use_viewer):
-    def getTotalCost (problem,result):
+def searchInfo (problem, result, use_viewer):
+    def getTotalCost(problem,result):
         originState = problem.initial_state
         totalCost = 0
         for action,endingState in result.path():
@@ -124,7 +156,7 @@ def searchInfo (problem,result,use_viewer):
     return res
 
 
-def resultado_experimento(problem,MAP,result,used_viewer):
+def resultado_experimento(problem, MAP, result, used_viewer):
     path = [x[1] for x in result.path()]
 
     for y in range(len(MAP)):
@@ -139,23 +171,26 @@ def resultado_experimento(problem,MAP,result,used_viewer):
                 print(MAP[y][x], end='')
         print()
 
-    info=searchInfo(problem,result,used_viewer)
+    info = searchInfo(problem, result, used_viewer)
     print(info)
 
-def main(MAP_ASCII,COSTS,algorithms,heuristic_number=1):
+def main(MAP_ASCII, COSTS, algorithms, heuristic_number=1):
     MAP = [list(x) for x in MAP_ASCII.split("\n") if x]
 
     for algorithm in algorithms:
-      problem = GameWalkPuzzle(MAP,COSTS,heuristic_number)
+      problem = GameWalkPuzzle(MAP, COSTS, heuristic_number)
       used_viewer=BaseViewer()
       # Probad también ConsoleViewer para depurar
       # No podréis usar WebViewer en Collab para ver los árboles
 
       # Mostramos tres experimentos
+      print(f"-----------------------------------------------------------------------------------------------")
       print ("Experimento con algoritmo {}:".format(algorithm))
-
-      result = algorithm(problem, graph_search=True,viewer=used_viewer)
-      resultado_experimento(problem,MAP,result,used_viewer)
+      print(f"Pasos")
+      result = algorithm(problem=problem, graph_search=True, viewer=used_viewer)
+      
+      resultado_experimento(problem=problem, MAP=MAP, result=result, used_viewer=used_viewer)
+      print(f"-----------------------------------------------------------------------------------------------")
 
 
 # Configuración y llamada para el caso 1
@@ -178,7 +213,8 @@ COSTS = {
     "left": 1.0,
 }
 
-algorithms=(breadth_first,depth_first)
+# algorithms=(breadth_first,depth_first)
+algorithms=(breadth_first,)
 main (MAP_ASCII,COSTS,algorithms)
 
 
@@ -227,6 +263,6 @@ COSTS = {
 }
 
 algorithms=(astar,)
-main (MAP_ASCII,COSTS,algorithms,1)
-main (MAP_ASCII,COSTS,algorithms,2)
-main (MAP_ASCII,COSTS,algorithms,3)
+main (MAP_ASCII, COSTS, algorithms, 1)
+main (MAP_ASCII, COSTS, algorithms, 2)
+main (MAP_ASCII, COSTS, algorithms, 3)
