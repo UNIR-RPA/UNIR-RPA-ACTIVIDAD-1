@@ -27,57 +27,82 @@ from __future__ import print_function
 from simpleai.search.viewers import BaseViewer,ConsoleViewer,WebViewer
 from simpleai.search import SearchProblem, astar, breadth_first, depth_first, uniform_cost
 
+node_count = 0
+nodes = []
+edges = []
+depth_count = 1
+
+class Node():
+    
+    def __init__(self, node_count, father_node_point, point_x, point_y, depht, action):
+        self.node_count = node_count
+        self.father_node_point = father_node_point
+        self.point = (point_x, point_y)
+        self.depht = depht
+        self.action = action
+        if (self.point == (3, 3)):
+            self.identifier = "T"
+        elif (self.point == (5, 5)):
+            self.identifier = "P"
+        else:
+            self.identifier = f"n{node_count}_d{depht}_{self.point}_{action}"
+
 class GameWalkPuzzle(SearchProblem):
 
     def __init__(self, board, costs, heuristic_number):
+        global node_count, nodes  
         self.board = board
         self.goal = (0, 0)
         self.costs = costs
-        self.fifo_actions = []
-        self.edges = []
-        self.node = 0
         self.heuristic_number = heuristic_number
         for y in range(len(self.board)):
             for x in range(len(self.board[y])):
                 if self.board[y][x].lower() == "t":
                     self.initial = (x, y)
-                    print(f"Punto de Inicio: {self.initial}")
+                    node_count += 1
+                    node = Node(  
+                      node_count=node_count,
+                      father_node_point=(3, 3),
+                      point_x=x,
+                      point_y=y,
+                      depht=0,
+                      action="no action"  
+                    )
+                    nodes.append(node)
                 elif self.board[y][x].lower() == "p":
                     self.goal = (x, y)
-                    print(f"Punto de Objetivo: {self.goal}")
 
         super(GameWalkPuzzle, self).__init__(initial_state=self.initial)
 
     def actions(self, state):
-        print("============================================================================")
+        global node_count, nodes, depth_count, edges
         x, y = state
-        print(f"Posicion Actual: ({x}, {y})")
-        print(f"Nodo: {self.node}")
         actions = []
         for action in list(self.costs.keys()):
-            print(f"Analizando accion '{action}'")
             newx, newy = self.result(state, action)
             if self.board[newy][newx] != "#":
-                # print(f"El punto ({newy}, {newx}) NO es PARED")
-                print(f"Posicion Siguiente: ({newx}, {newy})")
+                node_count = node_count + 1
                 actions.append(action)
-                self.fifo_actions.append(action)
-                print(f"Lista acciones nodo Actual: '{actions}'")
-                print(f"------------------------")
-            else:
-                print(f"El punto ({newy}, {newx}) es PARED")
-                print(f"------------------------")
-            
-        if (self.node == 0):
-            for action in actions:    
-                self.edges.append(('T', action))
-        else:
-            for action in actions:
-                self.edges.append((self.fifo_actions[0], action))
+                new_node = Node(
+                    node_count=node_count,
+                    father_node_point=(x, y),
+                    point_x=newx,
+                    point_y=newy,
+                    depht=depth_count,
+                    action=action 
+                )
+                is_visited_before = False
+                for node in nodes:
+                    #if (node.point == (newx, newy) and node.point != (3, 3)):
+                    if (node.point == (newx, newy)):
+                        is_visited_before = True
+                if not is_visited_before:
+                    node_father = [n for n in nodes if n.point == (x, y)][0]
+                    if node_father is not None:
+                        edges.append((node_father.identifier, new_node.identifier))
+                nodes.append(new_node)
                 
-        self.node = self.node + 1
-        self.fifo_actions.pop(0)
-        print("============================================================================")
+        depth_count = depth_count + 1
         return actions
 
     def result(self, state, action):
@@ -178,7 +203,7 @@ def main(MAP_ASCII, COSTS, algorithms, heuristic_number=1):
 
     for algorithm in algorithms:
       problem = GameWalkPuzzle(MAP, COSTS, heuristic_number)
-      used_viewer=BaseViewer()
+      used_viewer=WebViewer()
       # Probad también ConsoleViewer para depurar
       # No podréis usar WebViewer en Collab para ver los árboles
 
@@ -216,7 +241,7 @@ COSTS = {
 algorithms=(breadth_first,)
 main (MAP_ASCII,COSTS,algorithms)
 
-
+'''
 # Configuración y llamada para el caso 2
 # Se utiliza el mismo mapa pero se varían los costes
 
@@ -265,3 +290,4 @@ algorithms=(astar,)
 main (MAP_ASCII, COSTS, algorithms, 1)
 main (MAP_ASCII, COSTS, algorithms, 2)
 main (MAP_ASCII, COSTS, algorithms, 3)
+'''
