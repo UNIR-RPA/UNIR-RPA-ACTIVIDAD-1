@@ -238,7 +238,7 @@ COSTS = {
 }
 
 # algorithms=(breadth_first,depth_first)
-algorithms=(breadth_first,)
+algorithms=(depth_first,)
 main (MAP_ASCII,COSTS,algorithms)
 
 '''
