@@ -34,7 +34,12 @@ depth_count = 1
 
 class Node():
     
-    def __init__(self, node_count, father_node_point, point_x, point_y, depht, action):
+    def __init__(self,
+                 node_count,
+                 father_node_point,
+                 point_x, point_y,
+                 depht,
+                 action):
         self.node_count = node_count
         self.father_node_point = father_node_point
         self.point = (point_x, point_y)
@@ -216,7 +221,7 @@ def main(MAP_ASCII, COSTS, algorithms, heuristic_number=1):
       resultado_experimento(problem=problem, MAP=MAP, result=result, used_viewer=used_viewer)
       print(f"-----------------------------------------------------------------------------------------------")
 
-
+'''
 # Configuración y llamada para el caso 1
 # Se ejecutan los algoritmos de búsqueda en amplitud y búsqueda en profundidad
 
@@ -240,6 +245,7 @@ COSTS = {
 # algorithms=(breadth_first,depth_first)
 algorithms=(depth_first,)
 main (MAP_ASCII,COSTS,algorithms)
+'''
 
 '''
 # Configuración y llamada para el caso 2
@@ -265,7 +271,8 @@ COSTS = {
 algorithms=(breadth_first,uniform_cost,astar)
 main (MAP_ASCII,COSTS,algorithms)
 
-
+'''
+'''
 # Configuración y llamada para el caso 3
 # Se utiliza el mismo mapa y se usan diferentes heurísticas
 
@@ -288,6 +295,54 @@ COSTS = {
 
 algorithms=(astar,)
 main (MAP_ASCII, COSTS, algorithms, 1)
-main (MAP_ASCII, COSTS, algorithms, 2)
-main (MAP_ASCII, COSTS, algorithms, 3)
+# main (MAP_ASCII, COSTS, algorithms, 2)
+# main (MAP_ASCII, COSTS, algorithms, 3)
 '''
+
+'''
+# Configuración y llamada para el caso 2
+# Se utiliza el mismo mapa pero se varían los costes
+
+MAP_ASCII = """
+########
+#    P #
+# #### #
+#  T # #
+# ##   #
+#      #
+########
+"""
+
+COSTS = {
+    "up": 5.0,
+    "down": 5.0,
+    "right": 2.0,
+    "left": 2.0,
+}
+
+algorithms=(uniform_cost,astar)
+main (MAP_ASCII,COSTS,algorithms)
+'''
+
+# Configuración y llamada para el caso 3
+# Se utiliza el mismo mapa y se usan diferentes heurísticas
+
+MAP_ASCII = """
+########
+#    P #
+# #### #
+#  T # #
+# ##   #
+#      #
+########
+"""
+
+COSTS = {
+    "up": 5.0,
+    "down": 5.0,
+    "right": 2.0,
+    "left": 2.0,
+}
+
+algorithms=(astar,)
+main (MAP_ASCII, COSTS, algorithms)
