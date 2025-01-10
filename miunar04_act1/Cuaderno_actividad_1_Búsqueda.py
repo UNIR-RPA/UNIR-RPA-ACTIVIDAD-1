@@ -27,11 +27,35 @@ from __future__ import print_function
 from simpleai.search.viewers import BaseViewer,ConsoleViewer,WebViewer
 from simpleai.search import SearchProblem, astar, breadth_first, depth_first, uniform_cost
 
+node_count = 0
+nodes = []
+edges = []
+depth_count = 1
 
+class Node():
+    
+    def __init__(self,
+                 node_count,
+                 father_node_point,
+                 point_x, point_y,
+                 depht,
+                 action):
+        self.node_count = node_count
+        self.father_node_point = father_node_point
+        self.point = (point_x, point_y)
+        self.depht = depht
+        self.action = action
+        if (self.point == (3, 3)):
+            self.identifier = "T"
+        elif (self.point == (5, 5)):
+            self.identifier = "P"
+        else:
+            self.identifier = f"n{node_count}_d{depht}_{self.point}_{action}"
 
 class GameWalkPuzzle(SearchProblem):
 
     def __init__(self, board, costs, heuristic_number):
+        global node_count, nodes  
         self.board = board
         self.goal = (0, 0)
         self.costs = costs
@@ -40,17 +64,50 @@ class GameWalkPuzzle(SearchProblem):
             for x in range(len(self.board[y])):
                 if self.board[y][x].lower() == "t":
                     self.initial = (x, y)
+                    node_count += 1
+                    node = Node(  
+                      node_count=node_count,
+                      father_node_point=(3, 3),
+                      point_x=x,
+                      point_y=y,
+                      depht=0,
+                      action="no action"  
+                    )
+                    nodes.append(node)
                 elif self.board[y][x].lower() == "p":
                     self.goal = (x, y)
 
         super(GameWalkPuzzle, self).__init__(initial_state=self.initial)
 
     def actions(self, state):
+        global node_count, nodes, depth_count, edges
+        x, y = state
         actions = []
         for action in list(self.costs.keys()):
             newx, newy = self.result(state, action)
             if self.board[newy][newx] != "#":
+                node_count = node_count + 1
                 actions.append(action)
+                new_node = Node(
+                    node_count=node_count,
+                    father_node_point=(x, y),
+                    point_x=newx,
+                    point_y=newy,
+                    depht=depth_count,
+                    action=action 
+                )
+                is_visited_before = False
+                for node in nodes:
+                    #if (node.point == (newx, newy) and node.point != (3, 3)):
+                    if (node.point == (newx, newy)):
+                        is_visited_before = True
+                if not is_visited_before:
+                    node_father = [n for n in nodes if n.point == (x, y)][0]
+                    if node_father is not None:
+                        edges.append((node_father.identifier, new_node.identifier))
+                nodes.append(new_node)
+                
+        depth_count = depth_count + 1
         return actions
 
     def result(self, state, action):
@@ -67,11 +124,16 @@ class GameWalkPuzzle(SearchProblem):
 
         new_state = (x, y)
         return new_state
+    
+    def add_son_node(self):
+        self.edges.append(self.node)
 
     def is_goal(self, state):
         return state == self.goal
 
     def cost(self, state, action, state2):
+        cost = self.costs[action]
+        print(f"Coste de accion '{action}': {cost}")
         return self.costs[action]
 
     # Esta función heurística es la distancia entre el estado actual
@@ -101,8 +163,8 @@ class GameWalkPuzzle(SearchProblem):
       else:
         raise Exception("El número de la función heurística debe estar entre 1 y 3. Revise la inicialización del problema.")
 
-def searchInfo (problem,result,use_viewer):
-    def getTotalCost (problem,result):
+def searchInfo (problem, result, use_viewer):
+    def getTotalCost(problem,result):
         originState = problem.initial_state
         totalCost = 0
         for action,endingState in result.path():
@@ -123,8 +185,7 @@ def searchInfo (problem,result,use_viewer):
             res+= '{0}: {1}\n'.format(s['name'],s['value'])
     return res
 
-
-def resultado_experimento(problem,MAP,result,used_viewer):
+def resultado_experimento(problem, MAP, result, used_viewer):
     path = [x[1] for x in result.path()]
 
     for y in range(len(MAP)):
@@ -139,25 +200,28 @@ def resultado_experimento(problem,MAP,result,used_viewer):
                 print(MAP[y][x], end='')
         print()
 
-    info=searchInfo(problem,result,used_viewer)
+    info = searchInfo(problem, result, used_viewer)
     print(info)
 
-def main(MAP_ASCII,COSTS,algorithms,heuristic_number=1):
+def main(MAP_ASCII, COSTS, algorithms, heuristic_number=1):
     MAP = [list(x) for x in MAP_ASCII.split("\n") if x]
 
     for algorithm in algorithms:
-      problem = GameWalkPuzzle(MAP,COSTS,heuristic_number)
-      used_viewer=BaseViewer()
+      problem = GameWalkPuzzle(MAP, COSTS, heuristic_number)
+      used_viewer=WebViewer()
       # Probad también ConsoleViewer para depurar
       # No podréis usar WebViewer en Collab para ver los árboles
 
       # Mostramos tres experimentos
+      print(f"-----------------------------------------------------------------------------------------------")
       print ("Experimento con algoritmo {}:".format(algorithm))
+      print(f"Pasos")
+      result = algorithm(problem=problem, graph_search=True, viewer=used_viewer)
+      
+      resultado_experimento(problem=problem, MAP=MAP, result=result, used_viewer=used_viewer)
+      print(f"-----------------------------------------------------------------------------------------------")
 
-      result = algorithm(problem, graph_search=True,viewer=used_viewer)
-      resultado_experimento(problem,MAP,result,used_viewer)
-
-
+'''
 # Configuración y llamada para el caso 1
 # Se ejecutan los algoritmos de búsqueda en amplitud y búsqueda en profundidad
 
@@ -178,10 +242,12 @@ COSTS = {
     "left": 1.0,
 }
 
-algorithms=(breadth_first,depth_first)
+# algorithms=(breadth_first,depth_first)
+algorithms=(depth_first,)
 main (MAP_ASCII,COSTS,algorithms)
+'''
 
-
+'''
 # Configuración y llamada para el caso 2
 # Se utiliza el mismo mapa pero se varían los costes
 
@@ -205,7 +271,8 @@ COSTS = {
 algorithms=(breadth_first,uniform_cost,astar)
 main (MAP_ASCII,COSTS,algorithms)
 
-
+'''
+'''
 # Configuración y llamada para el caso 3
 # Se utiliza el mismo mapa y se usan diferentes heurísticas
 
@@ -227,6 +294,55 @@ COSTS = {
 }
 
 algorithms=(astar,)
-main (MAP_ASCII,COSTS,algorithms,1)
-main (MAP_ASCII,COSTS,algorithms,2)
-main (MAP_ASCII,COSTS,algorithms,3)
+main (MAP_ASCII, COSTS, algorithms, 1)
+# main (MAP_ASCII, COSTS, algorithms, 2)
+# main (MAP_ASCII, COSTS, algorithms, 3)
+'''
+
+'''
+# Configuración y llamada para el caso 2
+# Se utiliza el mismo mapa pero se varían los costes
+
+MAP_ASCII = """
+########
+#    P #
+# #### #
+#  T # #
+# ##   #
+#      #
+########
+"""
+
+COSTS = {
+    "up": 5.0,
+    "down": 5.0,
+    "right": 2.0,
+    "left": 2.0,
+}
+
+algorithms=(uniform_cost,astar)
+main (MAP_ASCII,COSTS,algorithms)
+'''
+
+# Configuración y llamada para el caso 3
+# Se utiliza el mismo mapa y se usan diferentes heurísticas
+
+MAP_ASCII = """
+########
+#    P #
+# #### #
+#  T # #
+# ##   #
+#      #
+########
+"""
+
+COSTS = {
+    "up": 5.0,
+    "down": 5.0,
+    "right": 2.0,
+    "left": 2.0,
+}
+
+algorithms=(astar,)
+main (MAP_ASCII, COSTS, algorithms)
