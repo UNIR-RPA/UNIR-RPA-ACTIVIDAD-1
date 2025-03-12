@@ -111,6 +111,14 @@ class GameWalkPuzzle(SearchProblem):
         return actions
 
     def result(self, state, action):
+        """
+        Given a state and an action, returns the new state after applying the action.
+        Parameters:
+        state (tuple): A tuple (x, y) representing the current coordinates.
+        action (str): A string representing the action to be taken. Possible values are "up", "down", "left", and "right".
+        Returns:
+        tuple: A tuple (x, y) representing the new coordinates after the action is applied.
+        """
         x, y = state
 
         if action.count("up"):
@@ -124,7 +132,7 @@ class GameWalkPuzzle(SearchProblem):
 
         new_state = (x, y)
         return new_state
-    
+ 
     def add_son_node(self):
         self.edges.append(self.node)
 
@@ -344,5 +352,5 @@ COSTS = {
     "left": 2.0,
 }
 
-algorithms=(astar,)
+algorithms=(uniform_cost,)
 main (MAP_ASCII, COSTS, algorithms)
